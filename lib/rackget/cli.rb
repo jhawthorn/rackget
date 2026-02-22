@@ -5,7 +5,9 @@ require_relative "../rackget"
 
 module Rackget
   class CLI
-    def initialize(argv)
+    def initialize(argv, stdout: $stdout, stdin: $stdin)
+      @stdout = stdout
+      @stdin = stdin
       @options = {
         rackup_file: "config.ru",
         include_headers: false,
@@ -41,7 +43,7 @@ module Rackget
       path, query_string = parse_target(target)
 
       input = @options[:data]
-      input = $stdin.read if input.nil? && !$stdin.tty?
+      input = @stdin.read if input.nil? && !@stdin.tty?
 
       app = Rackget.load_app(@options[:rackup_file])
       status, headers, body = Rackget.request(app, path,
@@ -51,12 +53,12 @@ module Rackget
       )
 
       if @options[:include_headers]
-        $stdout.puts "#{status} #{Rack::Utils::HTTP_STATUS_CODES[status]}"
-        headers.each { |k, v| $stdout.puts "#{k}: #{v}" }
-        $stdout.puts
+        @stdout.puts "#{status} #{Rack::Utils::HTTP_STATUS_CODES[status]}"
+        headers.each { |k, v| @stdout.puts "#{k}: #{v}" }
+        @stdout.puts
       end
 
-      body.each { |chunk| $stdout.write(chunk) }
+      body.each { |chunk| @stdout.write(chunk) }
       body.close if body.respond_to?(:close)
     end
 

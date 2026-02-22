@@ -21,14 +21,12 @@ class TestCLI < Minitest::Test
     }
   RUBY
 
-  def run_cli(*argv, rackup:)
+  def run_cli(*argv, rackup:, stdin: nil)
     out = StringIO.new
-    cli = Rackget::CLI.new(["-r", rackup, *argv])
-    $stdout = out
+    stdin_io = stdin ? StringIO.new(stdin) : StringIO.new
+    cli = Rackget::CLI.new(["-r", rackup, *argv], stdout: out, stdin: stdin_io)
     cli.run
     out.string
-  ensure
-    $stdout = STDOUT
   end
 
   def test_simple_path
@@ -108,6 +106,22 @@ class TestCLI < Minitest::Test
     with_rackup(ECHO_APP) do |_dir, rackup|
       output = run_cli("-X", "post", "-d", "x=1", "/", rackup: rackup)
       assert_includes output, "method=POST"
+    end
+  end
+
+  def test_post_with_stdin
+    with_rackup(ECHO_APP) do |_dir, rackup|
+      output = run_cli("-X", "POST", "/submit", rackup: rackup, stdin: "from_stdin=yes")
+      assert_includes output, "method=POST path=/submit"
+      assert_includes output, "body=from_stdin=yes"
+    end
+  end
+
+  def test_data_flag_takes_precedence_over_stdin
+    with_rackup(ECHO_APP) do |_dir, rackup|
+      output = run_cli("-X", "POST", "-d", "from_flag", "/submit", rackup: rackup, stdin: "from_stdin")
+      assert_includes output, "body=from_flag"
+      refute_includes output, "from_stdin"
     end
   end
 
