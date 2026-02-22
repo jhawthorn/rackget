@@ -93,6 +93,27 @@ class TestRackget < Minitest::Test
     assert_equal "method=GET", body_string(body)
   end
 
+  def test_request_with_custom_headers
+    app = ->(env) { [200, {}, ["accept=#{env["HTTP_ACCEPT"]}"]] }
+    _status, _headers, body = Rackget.request(app, "/", headers: { "Accept" => "application/json" })
+    assert_equal "accept=application/json", body_string(body)
+  end
+
+  def test_request_with_content_type_header
+    app = ->(env) { [200, {}, ["ct=#{env["CONTENT_TYPE"]}"]] }
+    _status, _headers, body = Rackget.request(app, "/", method: "POST", input: "{}", headers: { "Content-Type" => "application/json" })
+    assert_equal "ct=application/json", body_string(body)
+  end
+
+  def test_request_with_multiple_headers
+    app = ->(env) { [200, {}, ["#{env["HTTP_ACCEPT"]}|#{env["HTTP_AUTHORIZATION"]}"]] }
+    _status, _headers, body = Rackget.request(app, "/", headers: {
+      "Accept" => "text/html",
+      "Authorization" => "Bearer token123"
+    })
+    assert_equal "text/html|Bearer token123", body_string(body)
+  end
+
   private
 
   def body_string(body)
