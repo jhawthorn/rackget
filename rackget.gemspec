@@ -8,13 +8,11 @@ Gem::Specification.new do |spec|
   spec.authors = ["John Hawthorn"]
   spec.email = ["john@hawthorn.email"]
 
-  spec.summary = "TODO: Write a short summary, because RubyGems requires one."
-  spec.description = "TODO: Write a longer description or delete this line."
+  spec.summary = "Load a Rack app and make requests to it from the command line"
+  spec.description = "A command line utility that boots a Rack app from config.ru and makes HTTP requests to it directly, without starting a server."
   spec.homepage = "https://github.com/jhawthorn/rackget"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 3.2.0"
-
-  spec.metadata["allowed_push_host"] = "TODO: Set to your gem server 'https://example.com'"
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/jhawthorn/rackget"
 
@@ -31,8 +29,7 @@ Gem::Specification.new do |spec|
   spec.executables = spec.files.grep(%r{\Aexe/}) { |f| File.basename(f) }
   spec.require_paths = ["lib"]
 
-  # Uncomment to register a new dependency of your gem
-  # spec.add_dependency "example-gem", "~> 1.0"
+  spec.add_dependency "rack", ">= 2.0"
 
   # For more information and examples about making a new gem, check out our
   # guide at: https://bundler.io/guides/creating_gem.html
