@@ -12,7 +12,8 @@ module Rackget
         rackup_file: "config.ru",
         include_headers: false,
         method: "GET",
-        data: nil
+        data: nil,
+        headers: {}
       }
 
       @parser = OptionParser.new do |opts|
@@ -28,6 +29,11 @@ module Rackget
 
         opts.on("-d", "--data DATA", "Request body data") do |d|
           @options[:data] = d
+        end
+
+        opts.on("-H", "--header HEADER", "Custom header (e.g. 'Content-Type: application/json')") do |h|
+          name, value = h.split(":", 2)
+          @options[:headers][name.strip] = value.strip
         end
 
         opts.on("-i", "--show-headers", "Include status and headers in output") do
@@ -49,7 +55,8 @@ module Rackget
       status, headers, body = Rackget.request(app, path,
         method: @options[:method],
         query_string: query_string,
-        input: input
+        input: input,
+        headers: @options[:headers]
       )
 
       if @options[:include_headers]
@@ -60,6 +67,8 @@ module Rackget
 
       body.each { |chunk| @stdout.write(chunk) }
       body.close if body.respond_to?(:close)
+
+      status >= 400 ? 1 : 0
     end
 
     private

@@ -17,12 +17,18 @@ module Rackget
     result.is_a?(Array) ? result.first : result
   end
 
-  def self.request(app, path, method: "GET", query_string: nil, input: nil)
+  def self.request(app, path, method: "GET", query_string: nil, input: nil, headers: {})
     url = path.dup
     url = "#{url}?#{query_string}" if query_string && !query_string.empty?
 
     opts = { method: method }
     opts[:input] = input if input
+
+    headers.each do |name, value|
+      key = name.upcase.tr("-", "_")
+      key = "HTTP_#{key}" unless key == "CONTENT_TYPE" || key == "CONTENT_LENGTH"
+      opts[key] = value
+    end
 
     env = Rack::MockRequest.env_for(url, opts)
     app.call(env)
