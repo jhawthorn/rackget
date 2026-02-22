@@ -148,6 +148,7 @@ class TestCLI < Minitest::Test
   HEADER_APP = <<~RUBY
     run ->(env) {
       parts = []
+      parts << "host=\#{env["HTTP_HOST"]}" if env["HTTP_HOST"]
       parts << "accept=\#{env["HTTP_ACCEPT"]}" if env["HTTP_ACCEPT"]
       parts << "auth=\#{env["HTTP_AUTHORIZATION"]}" if env["HTTP_AUTHORIZATION"]
       parts << "ct=\#{env["CONTENT_TYPE"]}" if env["CONTENT_TYPE"]
@@ -171,6 +172,35 @@ class TestCLI < Minitest::Test
       )
       assert_includes output, "accept=text/html"
       assert_includes output, "auth=Bearer token123"
+    end
+  end
+
+  def test_host_from_full_url
+    with_rackup(HEADER_APP) do |_dir, rackup|
+      output, _exit = run_cli("http://myapp.example.com/", rackup: rackup)
+      assert_includes output, "host=myapp.example.com"
+    end
+  end
+
+  def test_host_from_full_url_with_port
+    with_rackup(HEADER_APP) do |_dir, rackup|
+      output, _exit = run_cli("http://localhost:3000/", rackup: rackup)
+      assert_includes output, "host=localhost:3000"
+    end
+  end
+
+  def test_host_not_set_for_plain_path
+    with_rackup(HEADER_APP) do |_dir, rackup|
+      output, _exit = run_cli("/", rackup: rackup)
+      refute_includes output, "host=myapp"
+    end
+  end
+
+  def test_explicit_host_header_overrides_url
+    with_rackup(HEADER_APP) do |_dir, rackup|
+      output, _exit = run_cli("-H", "Host: custom.test", "http://fromurl.test/", rackup: rackup)
+      assert_includes output, "host=custom.test"
+      refute_includes output, "fromurl"
     end
   end
 

@@ -46,7 +46,8 @@ module Rackget
 
     def run
       target = @args.first || "/"
-      path, query_string = parse_target(target)
+      path, query_string, host = parse_target(target)
+      @options[:headers]["Host"] ||= host if host
 
       input = @options[:data]
       input = @stdin.read if input.nil? && !@stdin.tty?
@@ -77,9 +78,11 @@ module Rackget
       uri = URI.parse(target)
       path = uri.path
       path = "/" if path.nil? || path.empty?
-      [path, uri.query]
+      host = uri.host
+      host = "#{host}:#{uri.port}" if host && uri.port && uri.port != uri.default_port
+      [path, uri.query, host]
     rescue URI::InvalidURIError
-      [target, nil]
+      [target, nil, nil]
     end
   end
 end
